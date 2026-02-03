@@ -27,6 +27,7 @@ Environment variables:
 - `YT_DLP_API_HOST` (default: `127.0.0.1`) – bind address
 - `YT_DLP_API_PORT` (default: `8000`) – port (or `PORT` on Render)
 - **`API_SECRET`** (required) – secret used to authenticate requests; must be sent as a Bearer token (see below)
+- **`PROXY_APIFY_PASSWORD`** (optional) – when set, all extraction requests use [Apify residential proxy](https://docs.apify.com/platform/proxy/residential-proxy) (`groups-RESIDENTIAL`). Use this in production (e.g. on Render) to reduce YouTube “Sign in to confirm you’re not a bot” errors. Get the password from [Apify Proxy](https://console.apify.com/proxy). On Render, add `PROXY_APIFY_PASSWORD` in the service **Environment** with your Apify proxy password.
 
 Example: `YT_DLP_API_PORT=9000 yt-dlp-api`
 
