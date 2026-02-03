@@ -2364,6 +2364,28 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
                 'value': ('intensityScoreNormalized', {float_or_none}),
             })) or None
 
+    def _extract_game_from_engagement_panels(self, data):
+        """Extract associated game from videoDescriptionGamingSectionRenderer in the structured description."""
+        lockup = traverse_obj(data, (
+            'engagementPanels', ..., 'engagementPanelSectionListRenderer',
+            'content', 'structuredDescriptionContentRenderer', 'items', ...,
+            'videoDescriptionGamingSectionRenderer', 'mediaLockups', 0,
+            'mediaLockupRenderer', {dict}), get_all=False)
+        if not lockup:
+            return None
+        title = traverse_obj(lockup, ('title', 'simpleText', {str}), get_all=False)
+        if not title:
+            return None
+        game_url = traverse_obj(lockup, (
+            'endpoint', (('commandMetadata', 'webCommandMetadata', 'url'), ('browseEndpoint', 'browseId')),
+            {lambda u: urljoin('https://www.youtube.com', u if (u or '').startswith('/') else f'/channel/{u}') if u else None}),
+            get_all=False)
+        subtitle = traverse_obj(lockup, ('subtitle', 'simpleText', {str}), get_all=False)
+        result = {'game': title, 'game_url': game_url or None}
+        if subtitle:
+            result['game_release_year'] = subtitle
+        return result
+
     def _extract_comment(self, entities, parent=None):
         comment_entity_payload = get_first(entities, ('payload', 'commentEntityPayload', {dict}))
         if not (comment_id := traverse_obj(comment_entity_payload, ('properties', 'commentId', {str}))):
@@ -4351,6 +4373,14 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
                 or None)
 
             info['heatmap'] = self._extract_heatmap(initial_data)
+
+            game_info = self._extract_game_from_engagement_panels(initial_data)
+            if game_info:
+                info['game'] = game_info['game']
+                if game_info.get('game_url'):
+                    info['game_url'] = game_info['game_url']
+                if game_info.get('game_release_year'):
+                    info['game_release_year'] = game_info['game_release_year']
 
         contents = traverse_obj(
             initial_data, ('contents', 'twoColumnWatchNextResults', 'results', 'results', 'contents'),
