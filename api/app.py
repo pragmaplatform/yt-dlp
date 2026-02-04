@@ -20,4 +20,12 @@ app = FastAPI(
     description='HTTP API for video metadata (no download). Extensible to more providers and data types.',
     on_startup=[_load_env],
 )
+
+
+@app.get('/health')
+def health() -> dict[str, str]:
+    """Unauthenticated health check for Render and load balancers."""
+    return {'status': 'ok'}
+
+
 app.include_router(api_router)
