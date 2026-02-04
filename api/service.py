@@ -26,7 +26,11 @@ def _apify_proxy_url() -> str | None:
 
 
 def _opts_for(extract_type: EXTRACT_TYPES) -> dict:
-    base = {'skip_download': True, 'quiet': True}
+    base = {
+        'skip_download': True,
+        'quiet': True,
+        'ignore_no_formats_error': True,
+    }
     if extract_type == 'playlist_flat':
         base['extract_flat'] = 'in_playlist'
     proxy = _apify_proxy_url()
