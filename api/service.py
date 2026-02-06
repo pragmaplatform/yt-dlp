@@ -25,7 +25,20 @@ def _apify_proxy_url() -> str | None:
     return f'http://{APIFY_RESIDENTIAL_USER}:{encoded}@{APIFY_PROXY_HOST}:{APIFY_PROXY_PORT}'
 
 
-def _opts_for(extract_type: EXTRACT_TYPES) -> dict:
+def _tiktok_extractor_args() -> dict | None:
+    """TikTok extractor args (device_id + app_info) when TIKTOK_DEVICE_ID is set. Required for hashtag posts (mobile API)."""
+    device_id = os.environ.get('TIKTOK_DEVICE_ID', '').strip()
+    if not device_id:
+        return None
+    return {
+        'tiktok': {
+            'device_id': [device_id],
+            'app_info': [''],  # use extractor defaults; device_id alone enables mobile API
+        },
+    }
+
+
+def _opts_for(extract_type: EXTRACT_TYPES, url: str = '') -> dict:
     base = {
         'skip_download': True,
         'quiet': True,
@@ -36,6 +49,10 @@ def _opts_for(extract_type: EXTRACT_TYPES) -> dict:
     proxy = _apify_proxy_url()
     if proxy:
         base['proxy'] = proxy
+    if 'tiktok.com' in url:
+        tiktok_args = _tiktok_extractor_args()
+        if tiktok_args:
+            base['extractor_args'] = {**(base.get('extractor_args') or {}), **tiktok_args}
     return base
 
 
@@ -44,7 +61,7 @@ def extract(url: str, extract_type: EXTRACT_TYPES) -> dict | None:
     Extract metadata for the given URL. No provider-specific logic;
     yt-dlp selects the extractor from the URL.
     """
-    opts = _opts_for(extract_type)
+    opts = _opts_for(extract_type, url)
     with YoutubeDL(opts) as ydl:
         result = ydl.extract_info(url, download=False)
     if result is None:
