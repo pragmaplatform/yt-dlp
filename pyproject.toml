@@ -94,6 +94,11 @@ test = [
 pyinstaller = [
     "pyinstaller>=6.17.0",  # 6.17.0+ needed for compat with setuptools 81+
 ]
+api = [
+    "fastapi",
+    "uvicorn[standard]",
+    "python-dotenv",
+]
 
 [project.urls]
 Documentation = "https://github.com/yt-dlp/yt-dlp#readme"
@@ -103,12 +108,14 @@ Funding = "https://github.com/yt-dlp/yt-dlp/blob/master/Maintainers.md#maintaine
 
 [project.scripts]
 yt-dlp = "yt_dlp:main"
+yt-dlp-api = "api.__main__:main"
 
 [project.entry-points.pyinstaller40]
 hook-dirs = "yt_dlp.__pyinstaller:get_hook_dirs"
 
 [tool.hatch.build.targets.sdist]
 include = [
+    "/api",
     "/yt_dlp",
     "/devscripts",
     "/test",
@@ -128,7 +135,7 @@ artifacts = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["yt_dlp"]
+packages = ["yt_dlp", "api"]
 artifacts = [
     "/yt_dlp/extractor/lazy_extractors.py",
 ]

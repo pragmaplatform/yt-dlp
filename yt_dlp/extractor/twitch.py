@@ -521,7 +521,7 @@ class TwitchVodIE(TwitchBaseIE):
             else:
                 is_live = False
 
-        return {
+        result = {
             'id': vod_id,
             'title': info.get('title') or 'Untitled Broadcast',
             'description': info.get('description'),
@@ -535,6 +535,15 @@ class TwitchVodIE(TwitchBaseIE):
             'is_live': is_live,
             'was_live': True,
         }
+        game_name = traverse_obj(info, ('game', 'displayName'), {str})
+        if game_name:
+            result['game'] = game_name
+            game_slug = traverse_obj(info, ('game', 'name'), {str})
+            if game_slug:
+                result['game_url'] = urljoin('https://www.twitch.tv', f'/directory/game/{game_slug}')
+            else:
+                result['game_url'] = urljoin('https://www.twitch.tv', f'/directory/game/{urllib.parse.quote(game_name)}')
+        return result
 
     def _extract_storyboard(self, item_id, storyboard_json_url, duration):
         if not duration or not storyboard_json_url:
