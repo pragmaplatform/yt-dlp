@@ -703,6 +703,19 @@ class YoutubeTabBaseInfoExtractor(YoutubeBaseInfoExtractor):
             'thumbnails': (primary_thumbnails or playlist_thumbnails) + avatar_thumbnails + channel_banners,
         })
 
+        if not info.get('channel') or info.get('title') == info.get('id'):
+            ithr = traverse_obj(data, ('header', 'interactiveTabbedHeaderRenderer'), expected_type=dict)
+            page_title_ithr = self._get_text(ithr, 'title') if ithr else None
+            if page_title_ithr:
+                info['title'] = page_title_ithr
+                channel_name_ithr = (
+                    self._get_text(ithr, 'channelTitle')
+                    or self._get_text(ithr, 'channelName')
+                    or self._get_text(ithr, 'subtitle')
+                    or page_title_ithr)
+                info['channel'] = channel_name_ithr
+                info['channel_id'] = info['id']
+
         channel_handle = (
             traverse_obj(metadata_renderer, (('vanityChannelUrl', ('ownerUrls', ...)), {self.handle_from_url}), get_all=False)
             or traverse_obj(data, ('header', ..., 'channelHandleText', {self.handle_or_none}), get_all=False))
