@@ -26,7 +26,7 @@ Environment variables:
 
 - `YT_DLP_API_HOST` (default: `127.0.0.1`) – bind address
 - `YT_DLP_API_PORT` (default: `8000`) – port (or `PORT` on Render)
-- **`API_SECRET`** (required) – secret used to authenticate requests; must be sent as a Bearer token (see below)
+- **`YT_DLP_API_SECRET`** (required) – secret used to authenticate requests; must be sent as a Bearer token (see below)
 - **`PROXY_APIFY_PASSWORD`** (optional) – when set, all extraction requests use [Apify residential proxy](https://docs.apify.com/platform/proxy/residential-proxy) (`groups-RESIDENTIAL`). Use this in production (e.g. on Render) to reduce YouTube “Sign in to confirm you’re not a bot” errors. Get the password from [Apify Proxy](https://console.apify.com/proxy). On Render, add `PROXY_APIFY_PASSWORD` in the service **Environment** with your Apify proxy password.
 - **`TIKTOK_DEVICE_ID`** (optional) – 19-digit device ID for the TikTok mobile API. Required for **hashtag posts** (`GET /tiktok/hashtag/posts`); user profile and user posts work without it. To find a working value: search [yt-dlp GitHub issues](https://github.com/yt-dlp/yt-dlp/issues?q=tiktok+device_id) for "tiktok" and "device_id", or try a 19-digit number in the range the extractor uses (e.g. 7250000000000000000–7325099899999994577). TikTok may invalidate IDs over time. **Note:** Hashtag posts may still return 503 if TikTok requires X-Gorgon/signature headers (yt-dlp does not generate these).
 
@@ -40,7 +40,7 @@ Every request must include the shared secret in the **Authorization** header as 
 Authorization: Bearer YOUR_API_SECRET
 ```
 
-Set `API_SECRET` in your environment (e.g. in a `.env` file locally). **On Render:** open your service → **Environment** → add a variable `API_SECRET` with your chosen secret (Render will inject it at runtime). If `API_SECRET` is not set, the API returns 503.
+Set `YT_DLP_API_SECRET` in your environment (e.g. in a `.env` file locally). **On Render:** open your service → **Environment** → add a variable `YT_DLP_API_SECRET` with your chosen secret (Render will inject it at runtime). If `YT_DLP_API_SECRET` is not set, the API returns 503.
 
 Example with curl:
 
