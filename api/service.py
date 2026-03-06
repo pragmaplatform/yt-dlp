@@ -43,6 +43,9 @@ def _opts_for(extract_type: EXTRACT_TYPES, url: str = '') -> dict:
         'skip_download': True,
         'quiet': True,
         'ignore_no_formats_error': True,
+        'http_headers': {
+            'Accept-Encoding': 'gzip, deflate',
+        },
     }
     if extract_type == 'playlist_flat':
         base['extract_flat'] = 'in_playlist'
