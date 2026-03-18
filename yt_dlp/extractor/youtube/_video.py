@@ -2357,27 +2357,53 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
                 'value': ('intensityScoreNormalized', {float_or_none}),
             })) or None
 
+    def _extract_game_from_video_attributes_section(self, data):
+        """Extract game from videoAttributesSectionViewModel (replaces videoDescriptionGamingSectionRenderer on newer YouTube)."""
+        vam = traverse_obj(data, (
+            'engagementPanels', ..., 'engagementPanelSectionListRenderer',
+            'content', 'structuredDescriptionContentRenderer', 'items', ...,
+            'videoAttributesSectionViewModel', 'videoAttributeViewModels', 0,
+            'videoAttributeViewModel', {dict}), get_all=False)
+        if not vam:
+            return None
+        title = vam.get('title') if isinstance(vam.get('title'), str) else None
+        if not (title or '').strip():
+            title = self._get_text(vam, 'title')
+        if not title:
+            return None
+        title = title.strip()
+        game_url = traverse_obj(vam, (
+            'onTap', 'innertubeCommand',
+            (('commandMetadata', 'webCommandMetadata', 'url'), ('browseEndpoint', 'browseId')),
+            {lambda u: urljoin('https://www.youtube.com', u if (u or '').startswith('/') else f'/channel/{u}') if u else None}),
+            get_all=False)
+        subtitle = vam.get('subtitle')
+        subtitle = subtitle.strip() if isinstance(subtitle, str) and subtitle.strip() else None
+        result = {'game': title, 'game_url': game_url or None}
+        if subtitle:
+            result['game_release_year'] = subtitle
+        return result
+
     def _extract_game_from_engagement_panels(self, data):
-        """Extract associated game from videoDescriptionGamingSectionRenderer in the structured description."""
+        """Extract associated game from structured description (legacy gaming lockup or videoAttributesSectionViewModel)."""
         lockup = traverse_obj(data, (
             'engagementPanels', ..., 'engagementPanelSectionListRenderer',
             'content', 'structuredDescriptionContentRenderer', 'items', ...,
             'videoDescriptionGamingSectionRenderer', 'mediaLockups', 0,
             'mediaLockupRenderer', {dict}), get_all=False)
-        if not lockup:
-            return None
-        title = traverse_obj(lockup, ('title', 'simpleText', {str}), get_all=False)
-        if not title:
-            return None
-        game_url = traverse_obj(lockup, (
-            'endpoint', (('commandMetadata', 'webCommandMetadata', 'url'), ('browseEndpoint', 'browseId')),
-            {lambda u: urljoin('https://www.youtube.com', u if (u or '').startswith('/') else f'/channel/{u}') if u else None}),
-            get_all=False)
-        subtitle = traverse_obj(lockup, ('subtitle', 'simpleText', {str}), get_all=False)
-        result = {'game': title, 'game_url': game_url or None}
-        if subtitle:
-            result['game_release_year'] = subtitle
-        return result
+        if lockup:
+            title = traverse_obj(lockup, ('title', 'simpleText', {str}), get_all=False) or self._get_text(lockup, 'title')
+            if title:
+                game_url = traverse_obj(lockup, (
+                    'endpoint', (('commandMetadata', 'webCommandMetadata', 'url'), ('browseEndpoint', 'browseId')),
+                    {lambda u: urljoin('https://www.youtube.com', u if (u or '').startswith('/') else f'/channel/{u}') if u else None}),
+                    get_all=False)
+                subtitle = traverse_obj(lockup, ('subtitle', 'simpleText', {str}), get_all=False)
+                result = {'game': title, 'game_url': game_url or None}
+                if subtitle:
+                    result['game_release_year'] = subtitle
+                return result
+        return self._extract_game_from_video_attributes_section(data)
 
     def _extract_comment(self, entities, parent=None):
         comment_entity_payload = get_first(entities, ('payload', 'commentEntityPayload', {dict}))
