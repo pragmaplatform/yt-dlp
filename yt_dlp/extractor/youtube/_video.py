@@ -2357,14 +2357,8 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
                 'value': ('intensityScoreNormalized', {float_or_none}),
             })) or None
 
-    def _extract_game_from_video_attributes_section(self, data):
-        """Extract game from videoAttributesSectionViewModel (replaces videoDescriptionGamingSectionRenderer on newer YouTube)."""
-        vam = traverse_obj(data, (
-            'engagementPanels', ..., 'engagementPanelSectionListRenderer',
-            'content', 'structuredDescriptionContentRenderer', 'items', ...,
-            'videoAttributesSectionViewModel', 'videoAttributeViewModels', 0,
-            'videoAttributeViewModel', {dict}), get_all=False)
-        if not vam:
+    def _parse_game_from_video_attribute_view_model(self, vam):
+        if not isinstance(vam, dict):
             return None
         title = vam.get('title') if isinstance(vam.get('title'), str) else None
         if not (title or '').strip():
@@ -2383,6 +2377,30 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
         if subtitle:
             result['game_release_year'] = subtitle
         return result
+
+    def _extract_game_from_video_attributes_section(self, data):
+        """Extract game from videoAttributesSectionViewModel (replaces videoDescriptionGamingSectionRenderer on newer YouTube)."""
+        view_models = traverse_obj(data, (
+            'engagementPanels', ..., 'engagementPanelSectionListRenderer',
+            'content', 'structuredDescriptionContentRenderer', 'items', ...,
+            'videoAttributesSectionViewModel', 'videoAttributeViewModels', ...,
+            'videoAttributeViewModel', {dict})) or []
+        if not view_models:
+            return None
+        candidates = []
+        for vam in view_models:
+            parsed = self._parse_game_from_video_attribute_view_model(vam)
+            if not parsed:
+                continue
+            has_browse = bool(traverse_obj(
+                vam, ('onTap', 'innertubeCommand', 'browseEndpoint'), get_all=False))
+            candidates.append((has_browse, parsed))
+        if not candidates:
+            return None
+        for has_browse, parsed in candidates:
+            if has_browse:
+                return parsed
+        return candidates[0][1]
 
     def _extract_game_from_engagement_panels(self, data):
         """Extract associated game from structured description (legacy gaming lockup or videoAttributesSectionViewModel)."""
