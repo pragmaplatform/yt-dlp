@@ -191,7 +191,7 @@ def _log_request_summary(label: str, request_log: list[dict]) -> None:
     total = sum(r['bytes'] for r in request_log)
     sys.stderr.write(
         f'METRICS [{label}]: {len(request_log)} requests, '
-        f'{total:,} bytes decompressed\n'
+        f'{total:,} bytes decompressed\n',
     )
     for r in request_log:
         sys.stderr.write(f'  {r["bytes"]:>10,}B  {r["url"]}\n')

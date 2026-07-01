@@ -12,7 +12,7 @@ router = APIRouter()
 def _is_twitch_url(url: str) -> bool:
     try:
         parsed = urlparse(url)
-        netloc = parsed.netloc.lower().lstrip('www.')
+        netloc = parsed.netloc.lower().removeprefix('www.')
         return netloc == 'twitch.tv' or netloc.endswith('.twitch.tv')
     except Exception:
         return False
