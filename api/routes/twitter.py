@@ -212,7 +212,7 @@ def _parse_rsc_tweets(page: str, username: str) -> list[dict]:
     # Media: first thumbnail per tweet via media_entities2 client key
     media: dict[str, str] = {}
     media_pat = re.compile(
-        r'__id:"client:(' + _B64_TWEET + r'):media_entities2:\d+"[^}]*?media_url_https:"([^"]+)"'
+        r'__id:"client:(' + _B64_TWEET + r'):media_entities2:\d+"[^}]*?media_url_https:"([^"]+)"',
     )
     for m in media_pat.finditer(big):
         tweet_id = _decode_tweet_id(m.group(1))
