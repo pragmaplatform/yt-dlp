@@ -17,6 +17,7 @@ not required for public profiles.
 from __future__ import annotations
 
 import base64
+import contextlib
 import re
 from typing import Any
 from urllib.parse import urlparse
@@ -83,29 +84,39 @@ def _unescape_js(s: str) -> str:
         if s[i] == '\\' and i + 1 < len(s):
             c = s[i + 1]
             if c == 'n':
-                result.append('\n'); i += 2
+                result.append('\n')
+                i += 2
             elif c == 't':
-                result.append('\t'); i += 2
+                result.append('\t')
+                i += 2
             elif c == 'r':
-                result.append('\r'); i += 2
+                result.append('\r')
+                i += 2
             elif c == '"':
-                result.append('"'); i += 2
+                result.append('"')
+                i += 2
             elif c == "'":
-                result.append("'"); i += 2
+                result.append("'")
+                i += 2
             elif c == '\\':
-                result.append('\\'); i += 2
+                result.append('\\')
+                i += 2
             elif c == '/':
-                result.append('/'); i += 2
+                result.append('/')
+                i += 2
             elif c == 'u' and i + 5 <= len(s):
                 try:
                     result.append(chr(int(s[i + 2:i + 6], 16)))
                     i += 6
                 except ValueError:
-                    result.append(s[i]); i += 1
+                    result.append(s[i])
+                    i += 1
             else:
-                result.append(s[i]); i += 1
+                result.append(s[i])
+                i += 1
         else:
-            result.append(s[i]); i += 1
+            result.append(s[i])
+            i += 1
     return ''.join(result)
 
 
@@ -195,10 +206,8 @@ def _parse_rsc_tweets(page: str, username: str) -> list[dict]:
         tweet_id = _decode_tweet_id(m.group(1))
         raw = m.group(2).strip('"')
         if tweet_id and raw != 'null':
-            try:
+            with contextlib.suppress(ValueError):
                 views[tweet_id] = int(raw)
-            except ValueError:
-                pass
 
     # Media: first thumbnail per tweet via media_entities2 client key
     media: dict[str, str] = {}
