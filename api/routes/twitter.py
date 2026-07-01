@@ -133,7 +133,7 @@ def _parse_rsc_tweets(page: str, username: str) -> list[dict]:
     TimelineTimelineEntry items — the entries X actually chose to show on the
     profile timeline.
     """
-    scripts = re.findall(r'<script[^>]+>(.*?)</script>', page, re.DOTALL)
+    scripts = re.findall(r'<script\b[^>]*>(.*?)</script\s*>', page, re.DOTALL)
     if not scripts:
         return []
     big = max(scripts, key=len)
