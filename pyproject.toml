@@ -100,6 +100,13 @@ pin-secretstorage = [
 pin-deno = [
     "deno==2.8.3",
 ]
+api = [
+    "fastapi",
+    "uvicorn[standard]",
+    "gunicorn",
+    "python-dotenv",
+    "curl-cffi>=0.5.10,!=0.6.*,!=0.7.*,!=0.8.*,!=0.9.*,<0.16 ; implementation_name == 'cpython'",
+]
 
 [dependency-groups]
 build = [
@@ -133,13 +140,6 @@ pip = [
 ]
 uv = [
     "uv>=0.10",
-]
-api = [
-    "fastapi",
-    "uvicorn[standard]",
-    "gunicorn",
-    "python-dotenv",
-    "curl-cffi>=0.5.10,!=0.6.*,!=0.7.*,!=0.8.*,!=0.9.*,<0.16 ; implementation_name == 'cpython'",
 ]
 
 [project.urls]
