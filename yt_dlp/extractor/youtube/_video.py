@@ -140,47 +140,50 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
     _RETURN_TYPE = 'video'  # XXX: How to handle multifeed?
 
     _SUBTITLE_FORMATS = ('json3', 'srv1', 'srv2', 'srv3', 'ttml', 'srt', 'vtt')
-    _DEFAULT_CLIENTS = ('android_vr', 'web', 'web_safari')
+    _DEFAULT_CLIENTS = ('android_vr', 'web_safari')
     _DEFAULT_JSLESS_CLIENTS = ('android_vr',)
-    _DEFAULT_AUTHED_CLIENTS = ('tv_downgraded', 'web', 'web_safari')
+    _DEFAULT_AUTHED_CLIENTS = ('tv_downgraded', 'web_safari')
     # Premium does not require POT (except for subtitles)
-    _DEFAULT_PREMIUM_CLIENTS = ('tv_downgraded', 'web_creator', 'web')
+    _DEFAULT_PREMIUM_CLIENTS = ('tv_downgraded', 'web_creator')
+    _WEBPAGE_CLIENTS = ('web', 'web_safari')
+    _DEFAULT_WEBPAGE_CLIENT = 'web_safari'
 
     _GEO_BYPASS = False
 
     IE_NAME = 'youtube'
     _TESTS = [{
-        'url': 'https://www.youtube.com/watch?v=BaW_jenozKc&t=1s&end=9',
+        'url': 'https://www.youtube.com/watch?v=YE7VzlLtp-4&t=1s&end=9',
         'info_dict': {
-            'id': 'BaW_jenozKc',
+            'id': 'YE7VzlLtp-4',
             'ext': 'mp4',
-            'title': 'youtube-dl test video "\'/\\ä↭𝕐',
-            'age_limit': 0,
-            'availability': 'public',
-            'categories': ['Science & Technology'],
-            'channel': 'Philipp Hagemeister',
+            'title': 'Big Buck Bunny',
+            'description': 'md5:e95316924b5eca2a74b87ab0b290724a',
+            'media_type': 'video',
+            'uploader': 'Blender',
+            'uploader_id': '@BlenderOfficial',
+            'uploader_url': 'https://www.youtube.com/@BlenderOfficial',
+            'channel': 'Blender',
+            'channel_id': 'UCSMOQeBJ2RAnuFungnQOxLg',
+            'channel_url': 'https://www.youtube.com/channel/UCSMOQeBJ2RAnuFungnQOxLg',
+            'channel_is_verified': True,
             'channel_follower_count': int,
-            'channel_id': 'UCLqxVugv74EIW3VWh2NOa3Q',
-            'channel_url': 'https://www.youtube.com/channel/UCLqxVugv74EIW3VWh2NOa3Q',
             'comment_count': int,
-            'description': 'md5:8fb536f4877b8a7455c2ec23794dbc22',
-            'duration': 10,
-            'end_time': 9,
-            'heatmap': 'count:100',
-            'like_count': int,
-            'live_status': 'not_live',
-            'playable_in_embed': True,
-            'start_time': 1,
-            'tags': 'count:1',
-            'thumbnail': r're:https?://i\.ytimg\.com/.+',
-            'timestamp': 1349198244,
-            'upload_date': '20121002',
-            'uploader': 'Philipp Hagemeister',
-            'uploader_id': '@PhilippHagemeister',
-            'uploader_url': 'https://www.youtube.com/@PhilippHagemeister',
             'view_count': int,
+            'like_count': int,
+            'age_limit': 0,
+            'duration': 597,
+            'thumbnail': 'https://i.ytimg.com/vi/YE7VzlLtp-4/maxresdefault.jpg',
+            'heatmap': 'count:100',
+            'start_time': 1.0,
+            'end_time': 9.0,
+            'categories': ['Film & Animation'],
+            'tags': 'count:16',
+            'timestamp': 1212060266,
+            'upload_date': '20080529',
+            'playable_in_embed': True,
+            'availability': 'public',
+            'live_status': 'not_live',
         },
-        'skip': 'Video unavailable',
     }, {
         'note': 'Embed-only video (#1746)',
         'url': '//www.YouTube.com/watch?v=yZIXLfi8CZQ',
@@ -195,35 +198,36 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
         'skip': 'Private video',
     }, {
         'note': 'Use the first video ID in the URL',
-        'url': 'https://www.youtube.com/watch?v=BaW_jenozKc&v=yZIXLfi8CZQ',
+        'url': 'https://www.youtube.com/watch?v=YE7VzlLtp-4&v=BaW_jenozKc',
         'info_dict': {
-            'id': 'BaW_jenozKc',
+            'id': 'YE7VzlLtp-4',
             'ext': 'mp4',
-            'title': 'youtube-dl test video "\'/\\ä↭𝕐',
-            'age_limit': 0,
-            'availability': 'public',
-            'categories': ['Science & Technology'],
-            'channel': 'Philipp Hagemeister',
+            'title': 'Big Buck Bunny',
+            'description': 'md5:e95316924b5eca2a74b87ab0b290724a',
+            'media_type': 'video',
+            'uploader': 'Blender',
+            'uploader_id': '@BlenderOfficial',
+            'uploader_url': 'https://www.youtube.com/@BlenderOfficial',
+            'channel': 'Blender',
+            'channel_id': 'UCSMOQeBJ2RAnuFungnQOxLg',
+            'channel_url': 'https://www.youtube.com/channel/UCSMOQeBJ2RAnuFungnQOxLg',
+            'channel_is_verified': True,
             'channel_follower_count': int,
-            'channel_id': 'UCLqxVugv74EIW3VWh2NOa3Q',
-            'channel_url': 'https://www.youtube.com/channel/UCLqxVugv74EIW3VWh2NOa3Q',
             'comment_count': int,
-            'description': 'md5:8fb536f4877b8a7455c2ec23794dbc22',
-            'duration': 10,
-            'heatmap': 'count:100',
-            'like_count': int,
-            'live_status': 'not_live',
-            'playable_in_embed': True,
-            'tags': 'count:1',
-            'thumbnail': r're:https?://i\.ytimg\.com/.+',
-            'timestamp': 1349198244,
-            'upload_date': '20121002',
-            'uploader': 'Philipp Hagemeister',
-            'uploader_id': '@PhilippHagemeister',
-            'uploader_url': 'https://www.youtube.com/@PhilippHagemeister',
             'view_count': int,
+            'like_count': int,
+            'age_limit': 0,
+            'duration': 597,
+            'thumbnail': 'https://i.ytimg.com/vi/YE7VzlLtp-4/maxresdefault.jpg',
+            'heatmap': 'count:100',
+            'categories': ['Film & Animation'],
+            'tags': 'count:16',
+            'timestamp': 1212060266,
+            'upload_date': '20080529',
+            'playable_in_embed': True,
+            'availability': 'public',
+            'live_status': 'not_live',
         },
-        'skip': 'Video unavailable',
     }, {
         'note': '256k DASH audio (format 141) via DASH manifest',
         'url': 'https://www.youtube.com/watch?v=a9LDPn-MO4I',
@@ -821,10 +825,10 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
         'url': 'sJL6WA-aGkQ',
         'only_matching': True,
     }, {
-        'url': 'https://invidio.us/watch?v=BaW_jenozKc',
+        'url': 'https://invidio.us/watch?v=YE7VzlLtp-4',
         'only_matching': True,
     }, {
-        'url': 'https://redirect.invidious.io/watch?v=BaW_jenozKc',
+        'url': 'https://redirect.invidious.io/watch?v=YE7VzlLtp-4',
         'only_matching': True,
     }, {
         # from https://nitter.pussthecat.org/YouTube/status/1360363141947944964#m
@@ -1874,7 +1878,7 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
     }]
 
     _DEFAULT_PLAYER_JS_VERSION = 'actual'
-    _DEFAULT_PLAYER_JS_VARIANT = 'tv'
+    _DEFAULT_PLAYER_JS_VARIANT = 'main'
     _PLAYER_JS_VARIANT_MAP = {
         'main': 'player_ias.vflset/en_US/base.js',
         'tcc': 'player_ias_tcc.vflset/en_US/base.js',
@@ -1889,6 +1893,28 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
         'house': 'house_brand_player.vflset/en_US/base.js',  # Used by Google Drive
     }
     _INVERSE_PLAYER_JS_VARIANT_MAP = {v: k for k, v in _PLAYER_JS_VARIANT_MAP.items()}
+
+    @functools.cached_property
+    def _player_js_version(self):
+        return self._configuration_arg('player_js_version', [None])[0] or self._DEFAULT_PLAYER_JS_VERSION
+
+    @functools.cached_property
+    def _webpage_client(self):
+        webpage_client = self._configuration_arg('webpage_client', [self._DEFAULT_WEBPAGE_CLIENT])[0]
+        if webpage_client not in self._WEBPAGE_CLIENTS:
+            self.report_warning(
+                f'Invalid webpage_client "{webpage_client}" requested; '
+                f'falling back to {self._DEFAULT_WEBPAGE_CLIENT}', only_once=True)
+            webpage_client = self._DEFAULT_WEBPAGE_CLIENT
+        return webpage_client
+
+    @functools.cached_property
+    def _skipped_webpage_data(self):
+        skipped = set(self._configuration_arg('webpage_skip'))
+        # If forcing a player version, the webpage player response must be skipped
+        if self._player_js_version != 'actual':
+            skipped.add('player_response')
+        return skipped
 
     @classmethod
     def suitable(cls, url):
@@ -1915,13 +1941,13 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
         start_time = time.time()
         formats = [f for f in formats if f.get('is_from_start')]
 
-        def refetch_manifest(format_id, delay):
+        def refetch_manifest(itag, client_name, delay):
             nonlocal formats, start_time, is_live
             if time.time() <= start_time + delay:
                 return
 
             _, _, _, _, prs, player_url = self._initial_extract(
-                url, smuggled_data, webpage_url, 'web', video_id)
+                url, smuggled_data, webpage_url, self._webpage_client, video_id)
             video_details = traverse_obj(prs, (..., 'videoDetails'), expected_type=dict)
             microformats = traverse_obj(
                 prs, (..., 'microformat', 'playerMicroformatRenderer'),
@@ -1930,20 +1956,20 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
             is_live = live_status == 'is_live'
             start_time = time.time()
 
-        def mpd_feed(format_id, delay):
+        def mpd_feed(itag, client_name, delay):
             """
             @returns (manifest_url, manifest_stream_number, is_live) or None
             """
             for retry in self.RetryManager(fatal=False):
                 with lock:
-                    refetch_manifest(format_id, delay)
+                    refetch_manifest(itag, client_name, delay)
 
-                f = next((f for f in formats if f['format_id'] == format_id), None)
+                f = next((f for f in formats if f.get('_itag') == itag and f.get('_client') == client_name), None)
                 if not f:
                     if not is_live:
                         retry.error = f'{video_id}: Video is no longer live'
                     else:
-                        retry.error = f'Cannot find refreshed manifest for format {format_id}{bug_reports_message()}'
+                        retry.error = f'Cannot find refreshed manifest for format {itag}{bug_reports_message()}'
                     continue
 
                 # Formats from ended premieres will be missing a manifest_url
@@ -1956,7 +1982,7 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
 
         for f in formats:
             f['is_live'] = is_live
-            gen = functools.partial(self._live_dash_fragments, video_id, f['format_id'],
+            gen = functools.partial(self._live_dash_fragments, video_id, f['_itag'], f['_client'],
                                     live_start_time, mpd_feed, not is_live and f.copy())
             if is_live:
                 f['fragments'] = gen
@@ -1965,7 +1991,7 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
                 f['fragments'] = LazyList(gen({}))
                 del f['is_from_start']
 
-    def _live_dash_fragments(self, video_id, format_id, live_start_time, mpd_feed, manifestless_orig_fmt, ctx):
+    def _live_dash_fragments(self, video_id, itag, client_name, live_start_time, mpd_feed, manifestless_orig_fmt, ctx):
         FETCH_SPAN, MAX_DURATION = 5, 432000
 
         mpd_url, stream_number, is_live = None, None, True
@@ -1989,7 +2015,7 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
             old_mpd_url = mpd_url
             last_error = ctx.pop('last_error', None)
             expire_fast = immediate or (last_error and isinstance(last_error, HTTPError) and last_error.status == 403)
-            mpd_url, stream_number, is_live = (mpd_feed(format_id, 5 if expire_fast else 18000)
+            mpd_url, stream_number, is_live = (mpd_feed(itag, client_name, 5 if expire_fast else 18000)
                                                or (mpd_url, stream_number, False))
             if not refresh_sequence:
                 if expire_fast and not is_live:
@@ -2015,7 +2041,7 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
             _last_seq = int(re.search(r'(?:/|^)sq/(\d+)', fragments[-1]['path']).group(1))
             return True, _last_seq
 
-        self.write_debug(f'[{video_id}] Generating fragments for format {format_id}')
+        self.write_debug(f'[{video_id}] Generating fragments for format {itag}')
         while is_live:
             fetch_time = time.time()
             if no_fragment_score > 30:
@@ -2077,15 +2103,14 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
             time.sleep(max(0, FETCH_SPAN + fetch_time - time.time()))
 
     def _get_player_js_version(self):
-        player_js_version = self._configuration_arg('player_js_version', [''])[0] or self._DEFAULT_PLAYER_JS_VERSION
-        if player_js_version == 'actual':
+        if self._player_js_version == 'actual':
             return None, None
-        if not re.fullmatch(r'[0-9]{5,}@[0-9a-f]{8,}', player_js_version):
+        if not re.fullmatch(r'[0-9]{5,}@[0-9a-f]{8,}', self._player_js_version):
             self.report_warning(
-                f'Invalid player JS version "{player_js_version}" specified. '
+                f'Invalid player JS version "{self._player_js_version}" specified. '
                 f'It should be "actual" or in the format of STS@HASH', only_once=True)
             return None, None
-        return player_js_version.split('@')
+        return self._player_js_version.split('@')
 
     def _construct_player_url(self, *, player_id=None, player_url=None):
         assert player_id or player_url, '_construct_player_url must take one of player_id or player_url'
@@ -2741,12 +2766,14 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
         return {'contentCheckOk': True, 'racyCheckOk': True}
 
     @classmethod
-    def _generate_player_context(cls, sts=None, use_ad_playback_context=False):
+    def _generate_player_context(cls, sts=None, use_ad_playback_context=False, encrypted_context=None):
         context = {
             'html5Preference': 'HTML5_PREF_WANTS',
         }
         if sts is not None:
             context['signatureTimestamp'] = sts
+        if encrypted_context:
+            context['encryptedHostFlags'] = encrypted_context
 
         playback_context = {
             'contentPlaybackContext': context,
@@ -2991,7 +3018,19 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
             self._configuration_arg('use_ad_playback_context', ['false'])[0] != 'false'
             and traverse_obj(INNERTUBE_CLIENTS, (client, 'SUPPORTS_AD_PLAYBACK_CONTEXT', {bool})))
 
-        yt_query.update(self._generate_player_context(sts, use_ad_playback_context))
+        # web_embedded player requests may need to include encryptedHostFlags in its contentPlaybackContext.
+        # This can be detected with the embeds_enable_encrypted_host_flags_enforcement experiemnt flag,
+        # but there is no harm in including encryptedHostFlags with all web_embedded player requests.
+        encrypted_context = None
+        if _split_innertube_client(client)[2] == 'embedded':
+            encrypted_context = traverse_obj(player_ytcfg, (
+                'WEB_PLAYER_CONTEXT_CONFIGS', 'WEB_PLAYER_CONTEXT_CONFIG_ID_EMBEDDED_PLAYER', 'encryptedHostFlags'))
+
+        yt_query.update(
+            self._generate_player_context(
+                sts=sts,
+                use_ad_playback_context=use_ad_playback_context,
+                encrypted_context=encrypted_context))
 
         return self._extract_response(
             item_id=video_id, ep='player', query=yt_query,
@@ -3110,7 +3149,7 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
                 tried_iframe_fallback = True
 
             pr = None
-            if client == webpage_client and 'player_response' not in self._configuration_arg('webpage_skip'):
+            if client == webpage_client and 'player_response' not in self._skipped_webpage_data:
                 pr = initial_pr
 
             visitor_data = visitor_data or self._extract_visitor_data(webpage_ytcfg, initial_pr, player_ytcfg)
@@ -3475,7 +3514,7 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
                     self._report_pot_format_skipped(video_id, client_name, proto)
                     return None
 
-                name = fmt_stream.get('qualityLabel') or quality.replace('audio_quality_', '') or ''
+                name = fmt_stream.get('qualityLabel') or (quality or '').replace('audio_quality_', '')
                 fps = int_or_none(fmt_stream.get('fps')) or 0
                 dct = {
                     'asr': int_or_none(fmt_stream.get('audioSampleRate')),
@@ -3776,11 +3815,15 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
                         sub[STREAMING_DATA_CLIENT_NAME] = client_name
                     subtitles = self._merge_subtitles(subs, subtitles)  # Prioritize HLS subs over DASH
                     for f in formats:
-                        if process_manifest_format(f, 'dash', client_name, f['format_id'], require_po_token and not po_token):
+                        # Save original itag value as format_id because process_manifest_format mutates f
+                        format_id = f['format_id']
+                        if process_manifest_format(f, 'dash', client_name, format_id, require_po_token and not po_token):
                             f['filesize'] = int_or_none(self._search_regex(
                                 r'/clen/(\d+)', f.get('fragment_base_url') or f['url'], 'file size', default=None))
                             if needs_live_processing:
                                 f['is_from_start'] = True
+                                f['_itag'] = format_id
+                                f['_client'] = client_name
                             yield f
         yield subtitles
 
@@ -3844,11 +3887,20 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
         wait_seconds = 0
 
         for renderer in traverse_obj(player_response, (
-            'adSlots', lambda _, v: v['adSlotRenderer']['adSlotMetadata']['triggerEvent'] == 'SLOT_TRIGGER_EVENT_BEFORE_CONTENT',
-            'adSlotRenderer', 'fulfillmentContent', 'fulfilledLayout', 'playerBytesAdLayoutRenderer', 'renderingContent', (
-                None,
-                ('playerBytesSequentialLayoutRenderer', 'sequentialLayouts', ..., 'playerBytesAdLayoutRenderer', 'renderingContent'),
-            ), 'instreamVideoAdRenderer', {dict},
+            (
+                (
+                    'adPlacements', lambda _, v: v['adPlacementRenderer']['config']['adPlacementConfig']['kind'] == 'AD_PLACEMENT_KIND_START',
+                    'adPlacementRenderer', 'renderer',
+                ),
+                (
+                    'adSlots', lambda _, v: v['adSlotRenderer']['adSlotMetadata']['triggerEvent'] == 'SLOT_TRIGGER_EVENT_BEFORE_CONTENT',
+                    'adSlotRenderer', 'fulfillmentContent', 'fulfilledLayout', 'playerBytesAdLayoutRenderer', 'renderingContent', (
+                        None,
+                        ('playerBytesSequentialLayoutRenderer', 'sequentialLayouts', ..., 'playerBytesAdLayoutRenderer', 'renderingContent'),
+                    ),
+                ),
+            ),
+            'instreamVideoAdRenderer', {dict},
         )):
             duration = traverse_obj(renderer, ('playerVars', {urllib.parse.parse_qs}, 'length_seconds', -1, {int_or_none}))
             ad = 'an ad' if duration is None else f'a {duration}s ad'
@@ -3893,7 +3945,7 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
 
     def _download_initial_data(self, video_id, webpage, webpage_client, webpage_ytcfg):
         initial_data = None
-        if webpage and 'initial_data' not in self._configuration_arg('webpage_skip'):
+        if webpage and 'initial_data' not in self._skipped_webpage_data:
             initial_data = self.extract_yt_initial_data(video_id, webpage, fatal=False)
             if not traverse_obj(initial_data, 'contents'):
                 self.report_warning('Incomplete data received in embedded initial data; re-fetching using API.')
@@ -3941,10 +3993,9 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
 
         base_url = self.http_scheme() + '//www.youtube.com/'
         webpage_url = base_url + 'watch?v=' + video_id
-        webpage_client = 'web'
 
         webpage, webpage_ytcfg, initial_data, is_premium_subscriber, player_responses, player_url = self._initial_extract(
-            url, smuggled_data, webpage_url, webpage_client, video_id)
+            url, smuggled_data, webpage_url, self._webpage_client, video_id)
 
         playability_statuses = traverse_obj(
             player_responses, (..., 'playabilityStatus'), expected_type=dict)
@@ -4389,7 +4440,7 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
                     if not release_year:
                         release_year = release_date[:4]
                 info.update({
-                    'album': mobj.group('album'.strip()),
+                    'album': mobj.group('album').strip(),
                     'artists': ([a] if (a := mobj.group('clean_artist'))
                                 else [a.strip() for a in mobj.group('artist').split(' · ')]),
                     'track': mobj.group('track').strip(),

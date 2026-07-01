@@ -12,12 +12,10 @@ router = APIRouter()
 def _is_youtube_url(url: str) -> bool:
     try:
         parsed = urlparse(url)
-        netloc = parsed.netloc.lower().lstrip('www.')
+        netloc = parsed.netloc.lower().removeprefix('www.')
         if netloc == 'youtube.com' or netloc.endswith('.youtube.com'):
             return True
-        if netloc == 'youtu.be':
-            return True
-        return False
+        return netloc == 'youtu.be'
     except Exception:
         return False
 
