@@ -8,7 +8,6 @@ import unittest
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
-from yt_dlp import YoutubeDL
 from yt_dlp.extractor import YoutubeIE
 from yt_dlp.extractor.youtube._base import YoutubeBaseInfoExtractor
 

@@ -13,7 +13,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
 from yt_dlp import YoutubeDL
-from yt_dlp.extractor.tiktok import TikTokUserIE, TikTokBaseIE
+from yt_dlp.extractor.tiktok import TikTokUserIE
 
 from api import service
 
