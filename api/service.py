@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 from typing import Literal
@@ -10,7 +11,7 @@ from urllib.parse import urlparse
 from yt_dlp import YoutubeDL
 
 
-EXTRACT_TYPES = Literal['playlist_flat', 'video']
+EXTRACT_TYPES = Literal['playlist_flat', 'video', 'captions']
 
 # Warnings that are noise for metadata-only extraction (we never download
 # formats, so missing-format / JS-runtime notices don't matter). Matched as
@@ -173,6 +174,16 @@ def _opts_for(extract_type: EXTRACT_TYPES, url: str = '', limit: int | None = No
                 'player_skip': ['webpage'],
             },
         }
+    if extract_type == 'captions':
+        # android_vr is sometimes bot-checked per video, and web/mweb caption
+        # URLs need a PO token; ios/android serve tokenless tracks without the
+        # JS player. /next (initial_data) carries nothing caption-related.
+        base['extractor_args'] = {
+            'youtube': {
+                'player_client': ['android_vr', 'ios', 'android'],
+                'player_skip': ['webpage', 'initial_data'],
+            },
+        }
     proxy = _proxy_url()
     if proxy:
         base['proxy'] = proxy
@@ -195,6 +206,60 @@ def _log_request_summary(label: str, request_log: list[dict]) -> None:
     )
     for r in request_log:
         sys.stderr.write(f'  {r["bytes"]:>10,}B  {r["url"]}\n')
+
+
+def _pick_caption_track(info: dict) -> tuple[str, bool, list[dict]] | None:
+    subtitles = info.get('subtitles') or {}
+    automatic = info.get('automatic_captions') or {}
+    for lang in ('en', 'en-US', 'en-GB'):
+        if subtitles.get(lang):
+            return lang, False, subtitles[lang]
+    if automatic.get('en-orig'):
+        return 'en-orig', True, automatic['en-orig']
+    orig = next((lang for lang in automatic if lang.endswith('-orig')), None)
+    if orig:
+        return orig, True, automatic[orig]
+    first_manual = next((lang for lang, tracks in subtitles.items() if tracks and lang != 'live_chat'), None)
+    if first_manual:
+        return first_manual, False, subtitles[first_manual]
+    return None
+
+
+def _json3_to_text(data: dict) -> str:
+    lines = []
+    for event in data.get('events') or []:
+        line = ''.join(seg.get('utf8', '') for seg in event.get('segs') or [])
+        line = ' '.join(line.split())
+        if line:
+            lines.append(line)
+    return ' '.join(lines)
+
+
+def extract_captions(url: str) -> tuple[dict | None, list[dict]]:
+    """
+    Return the full caption text for a video, preferring English (manual, then
+    auto-generated) and falling back to the video's original language.
+    """
+    opts = _opts_for('captions', url)
+    debug = _debug_enabled()
+    ydl_class = _MeasuringYoutubeDL if debug else YoutubeDL
+    with ydl_class(opts) as ydl:
+        info = ydl.extract_info(url, download=False, process=False)
+        if info is None:
+            return None, list(ydl.request_log) if debug else []
+        picked = _pick_caption_track(info)
+        result = {'id': info.get('id'), 'title': info.get('title'), 'language': None, 'is_automatic': None, 'text': None}
+        if picked:
+            lang, is_automatic, tracks = picked
+            track = next((t for t in tracks if t.get('ext') == 'json3'), None)
+            if track:
+                data = json.loads(ydl.urlopen(track['url']).read().decode())
+                result.update(language=lang.removesuffix('-orig'), is_automatic=is_automatic, text=_json3_to_text(data))
+        request_log = list(ydl.request_log) if debug else []
+
+    if debug:
+        _log_request_summary('captions', request_log)
+    return result, request_log
 
 
 def extract(url: str, extract_type: EXTRACT_TYPES, limit: int | None = None) -> tuple[dict | None, list[dict]]:

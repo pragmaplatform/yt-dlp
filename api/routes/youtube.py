@@ -63,3 +63,24 @@ def video(
     if response is not None:
         _set_metrics_headers(response, request_log)
     return result
+
+
+@router.get('/captions')
+def captions(
+    url: str = Query(..., description='YouTube video URL (e.g. .../watch?v=ID)'),
+    response: Response = None,
+):
+    """Return the full closed-caption text (English, else the video's original language)."""
+    if not _is_youtube_url(url):
+        raise HTTPException(status_code=400, detail='URL must be a YouTube video URL')
+    try:
+        result, request_log = service.extract_captions(url)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e)) from e
+    if result is None:
+        raise HTTPException(status_code=404, detail='No data extracted')
+    if result['text'] is None:
+        raise HTTPException(status_code=404, detail='No captions available for this video')
+    if response is not None:
+        _set_metrics_headers(response, request_log)
+    return result
