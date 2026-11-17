@@ -320,7 +320,7 @@ def _chat_segments(start: int, end: int | None, length: int) -> list[_ChatSegmen
     count = min(math.ceil(span / _TWITCH_CHAT_MIN_SEGMENT_SECONDS), _TWITCH_CHAT_WORKERS * _TWITCH_CHAT_BATCH_SIZE)
     boundaries = [start + span * i // count for i in range(count)]
     ends = [*boundaries[1:], end if end is not None else math.inf]
-    return [_ChatSegment(offset=s, end=e) for s, e in zip(boundaries, ends)]
+    return [_ChatSegment(offset=s, end=e) for s, e in zip(boundaries, ends, strict=True)]
 
 
 def _advance_segment(segment: _ChatSegment, comments: dict) -> None:
@@ -353,8 +353,8 @@ def _fetch_chat_nodes(ydl: YoutubeDL, video_id: str, segments: list[_ChatSegment
     with ThreadPoolExecutor(_TWITCH_CHAT_WORKERS) as pool:
         while active := [s for s in segments if not s.done]:
             batches = [active[i:i + _TWITCH_CHAT_BATCH_SIZE] for i in range(0, len(active), _TWITCH_CHAT_BATCH_SIZE)]
-            for batch, results in zip(batches, pool.map(fetch, batches)):
-                for segment, data in zip(batch, results):
+            for batch, results in zip(batches, pool.map(fetch, batches), strict=True):
+                for segment, data in zip(batch, results, strict=True):
                     comments = ((data.get('video') or {}).get('comments')) or {}
                     for edge in comments.get('edges') or []:
                         node = edge['node']
