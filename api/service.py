@@ -3,15 +3,20 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 import sys
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 from typing import Literal
 from urllib.parse import urlparse
 
 from yt_dlp import YoutubeDL
+from yt_dlp.networking import Request
+from yt_dlp.networking.exceptions import TransportError
 
 
-EXTRACT_TYPES = Literal['playlist_flat', 'video', 'captions']
+EXTRACT_TYPES = Literal['playlist_flat', 'video', 'captions', 'chat']
 
 # Warnings that are noise for metadata-only extraction (we never download
 # formats, so missing-format / JS-runtime notices don't matter). Matched as
@@ -260,6 +265,156 @@ def extract_captions(url: str) -> tuple[dict | None, list[dict]]:
     if debug:
         _log_request_summary('captions', request_log)
     return result, request_log
+
+
+_TWITCH_GQL_URL = 'https://gql.twitch.tv/gql'
+_TWITCH_CLIENT_ID = 'ue6666qo983tsx6so1t0vnawi233wa'
+_TWITCH_CHAT_BATCH_SIZE = 5
+_TWITCH_CHAT_WORKERS = 8
+_TWITCH_CHAT_ATTEMPTS = 3
+_TWITCH_CHAT_MIN_SEGMENT_SECONDS = 30
+
+_TWITCH_VIDEO_QUERY = 'query($id: ID!) { video(id: $id) { id title lengthSeconds owner { login } } }'
+
+_TWITCH_CHAT_QUERY = '''query($id: ID!, $offset: Int) {
+  video(id: $id) {
+    comments(contentOffsetSeconds: $offset) {
+      edges { node {
+        id contentOffsetSeconds createdAt
+        commenter { id login displayName }
+        message { fragments { text emote { emoteID } } userBadges { setID version } userColor }
+      } }
+      pageInfo { hasNextPage }
+    }
+  }
+}'''
+
+
+@dataclass
+class _ChatSegment:
+    offset: int
+    end: float
+    done: bool = False
+
+
+def _twitch_gql(ydl: YoutubeDL, operations: list[dict]) -> list[dict]:
+    request = Request(
+        _TWITCH_GQL_URL,
+        data=json.dumps(operations).encode(),
+        headers={'Client-ID': _TWITCH_CLIENT_ID, 'Content-Type': 'text/plain;charset=UTF-8'},
+    )
+    responses = json.loads(ydl.urlopen(request).read().decode())
+    if isinstance(responses, dict):
+        responses = [responses]
+    for response in responses:
+        if response.get('errors'):
+            raise RuntimeError(f'Twitch GQL error: {response["errors"][0].get("message")}')
+    return [response['data'] for response in responses]
+
+
+def _chat_segments(start: int, end: int | None, length: int) -> list[_ChatSegment]:
+    span_end = min(end, length) if end is not None else length
+    span = span_end - start
+    if span <= 0:
+        return [_ChatSegment(offset=start, end=end if end is not None else math.inf)]
+    count = min(math.ceil(span / _TWITCH_CHAT_MIN_SEGMENT_SECONDS), _TWITCH_CHAT_WORKERS * _TWITCH_CHAT_BATCH_SIZE)
+    boundaries = [start + span * i // count for i in range(count)]
+    ends = [*boundaries[1:], end if end is not None else math.inf]
+    return [_ChatSegment(offset=s, end=e) for s, e in zip(boundaries, ends)]
+
+
+def _advance_segment(segment: _ChatSegment, comments: dict) -> None:
+    # Twitch rejects cursor paging without a client-integrity token, so we page
+    # by offset. A page starts a few seconds before the requested offset and
+    # covers whole seconds, so re-requesting at the last offset seen is gap-free.
+    edges = comments.get('edges') or []
+    has_next = (comments.get('pageInfo') or {}).get('hasNextPage')
+    last = edges[-1]['node']['contentOffsetSeconds'] if edges else None
+    if not has_next or last is None or last >= segment.end:
+        segment.done = True
+    else:
+        segment.offset = last if last > segment.offset else segment.offset + 1
+
+
+def _fetch_chat_nodes(ydl: YoutubeDL, video_id: str, segments: list[_ChatSegment], start: int, end: int | None) -> list[dict]:
+    def fetch(batch: list[_ChatSegment]) -> list[dict]:
+        operations = [
+            {'query': _TWITCH_CHAT_QUERY, 'variables': {'id': video_id, 'offset': segment.offset}}
+            for segment in batch
+        ]
+        for attempt in range(1, _TWITCH_CHAT_ATTEMPTS + 1):
+            try:
+                return _twitch_gql(ydl, operations)
+            except TransportError:
+                if attempt == _TWITCH_CHAT_ATTEMPTS:
+                    raise
+
+    nodes: dict[str, dict] = {}
+    with ThreadPoolExecutor(_TWITCH_CHAT_WORKERS) as pool:
+        while active := [s for s in segments if not s.done]:
+            batches = [active[i:i + _TWITCH_CHAT_BATCH_SIZE] for i in range(0, len(active), _TWITCH_CHAT_BATCH_SIZE)]
+            for batch, results in zip(batches, pool.map(fetch, batches)):
+                for segment, data in zip(batch, results):
+                    comments = ((data.get('video') or {}).get('comments')) or {}
+                    for edge in comments.get('edges') or []:
+                        node = edge['node']
+                        if node['contentOffsetSeconds'] >= start and (end is None or node['contentOffsetSeconds'] < end):
+                            nodes[node['id']] = node
+                    _advance_segment(segment, comments)
+    return sorted(nodes.values(), key=lambda n: (n['contentOffsetSeconds'], n.get('createdAt') or ''))
+
+
+def _format_chat_message(node: dict) -> dict:
+    message = node.get('message') or {}
+    fragments = message.get('fragments') or []
+    commenter = node.get('commenter')
+    return {
+        'id': node['id'],
+        'offset_seconds': node['contentOffsetSeconds'],
+        'created_at': node.get('createdAt'),
+        'author': {
+            'id': commenter.get('id'),
+            'login': commenter.get('login'),
+            'display_name': commenter.get('displayName'),
+        } if commenter else None,
+        'text': ''.join(fragment.get('text') or '' for fragment in fragments),
+        'emotes': [
+            {'id': fragment['emote']['emoteID'], 'text': fragment.get('text')}
+            for fragment in fragments if fragment.get('emote')
+        ],
+        'badges': [
+            {'set_id': badge['setID'], 'version': badge.get('version')}
+            for badge in message.get('userBadges') or [] if badge.get('setID')
+        ],
+        'color': message.get('userColor'),
+    }
+
+
+def extract_twitch_chat(video_id: str, start: int = 0, end: int | None = None) -> tuple[dict | None, list[dict]]:
+    """Return the chat replay for a Twitch VOD, optionally limited to [start, end) seconds."""
+    debug = _debug_enabled()
+    ydl_class = _MeasuringYoutubeDL if debug else YoutubeDL
+    with ydl_class(_opts_for('chat')) as ydl:
+        [video_data] = _twitch_gql(ydl, [{'query': _TWITCH_VIDEO_QUERY, 'variables': {'id': video_id}}])
+        video = video_data.get('video')
+        if video is None:
+            return None, list(ydl.request_log) if debug else []
+        segments = _chat_segments(start, end, video.get('lengthSeconds') or 0)
+        nodes = _fetch_chat_nodes(ydl, video_id, segments, start, end)
+        request_log = list(ydl.request_log) if debug else []
+
+    if debug:
+        _log_request_summary('chat', request_log)
+    return {
+        'id': video['id'],
+        'title': video.get('title'),
+        'channel': (video.get('owner') or {}).get('login'),
+        'duration': video.get('lengthSeconds'),
+        'start': start,
+        'end': end,
+        'message_count': len(nodes),
+        'messages': [_format_chat_message(node) for node in nodes],
+    }, request_log
 
 
 def extract(url: str, extract_type: EXTRACT_TYPES, limit: int | None = None) -> tuple[dict | None, list[dict]]:
